@@ -5,8 +5,6 @@
   "license": ["MIT", "BSD-3-Clause", "GPL-2.0", "GPL-3.0"],
   "minimum-stability": "dev",
   "require": {
-    "absolute.app/core": "dev-master",
-    "absolute.app/auth": "dev-master",
-    "absolute.app/team": "dev-master"
+    "absolute.app/core": "dev-master"
   }    
 }
