@@ -26,11 +26,45 @@ class LabelManager extends BaseManager {
         return $ret;
     }
 
-    private function _getProjectList($projectId) {
-        $ret = $this->database->table('label')->where(':project_label.project_id', $projectId)->fetchAll();
+    //Project
+    private function _getProjectList($noteId) {
+        $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `project_label` ON `label`.`id` = `project_label`.`label_id` WHERE (`project_label`.`project_id` = ?)',$noteId);
         return $ret;
     }
 
+    private function _getProjectItem($noteId,$labelId) {
+        $ret = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `project_label` ON `label`.`id` = `project_label`.`label_id` WHERE (`project_label`.`project_id` = ?) AND (`label`.`id` = ?)',$noteId,$labelId);
+        return $ret;
+    }
+
+    public function _labelProjectDelete($noteId,$labelId) {
+        return $this->database->table('project_label')->where('label_id', $labelId)->where('project_id', $noteId)->delete();
+    }
+
+    public function _labelProjectCreate($noteId,$labelId) {
+        return $this->database->table('project_label')->insert(['label_id'=>$labelId,'project_id'=>$noteId]);
+    }
+
+    //Todo
+    private function _getTodoList($noteId) {
+        $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `todo_label` ON `label`.`id` = `todo_label`.`label_id` WHERE (`todo_label`.`todo_id` = ?)',$noteId);
+        return $ret;
+    }
+
+    private function _getTodoItem($noteId,$labelId) {
+        $ret = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `todo_label` ON `label`.`id` = `todo_label`.`label_id` WHERE (`todo_label`.`todo_id` = ?) AND (`label`.`id` = ?)',$noteId,$labelId);
+        return $ret;
+    }
+
+    public function _labelTodoDelete($noteId,$labelId) {
+        return $this->database->table('todo_label')->where('label_id', $labelId)->where('todo_id', $noteId)->delete();
+    }
+
+    public function _labelTodoCreate($noteId,$labelId) {
+        return $this->database->table('todo_label')->insert(['label_id'=>$labelId,'todo_id'=>$noteId]);
+    }
+
+    //NOTE
     private function _getNoteList($noteId) {
         $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `note_label` ON `label`.`id` = `note_label`.`label_id` WHERE (`note_label`.`note_id` = ?)',$noteId);
         return $ret;
@@ -41,17 +75,17 @@ class LabelManager extends BaseManager {
         return $ret;
     }
 
-    private function _getUserList($userId) {
-        $ret = $this->database->table('label')->where('user_id', $userId)->where('id NOT IN (SELECT label_id FROM project_label)')->fetchAll();
-        return $ret;
-    }
-
     public function labelNoteDelete($noteId,$labelId) {
         return $this->database->table('note_label')->where('label_id', $labelId)->where('note_id', $noteId)->delete();
     }
 
     public function labelNoteCreate($noteId,$labelId) {
         return $this->database->table('note_label')->insert(['label_id'=>$labelId,'note_id'=>$noteId]);
+    }
+
+    private function _getUserList($userId) {
+        $ret = $this->database->table('label')->where('user_id', $userId)->where('id NOT IN (SELECT label_id FROM project_label)')->fetchAll();
+        return $ret;
     }
 
     private function _getUserProjectList($userId) {
@@ -113,10 +147,6 @@ class LabelManager extends BaseManager {
     public function getList($user_id,$offset, $limit) {
         return $this->_getList($user_id,$offset, $limit);
     }
-
-    public function getProjectList($projectId) {
-        return $this->_getProjectList($projectId);
-    }
     
     public function getNoteList($noteId){
         return $this->_getNoteList($noteId);
@@ -145,5 +175,36 @@ class LabelManager extends BaseManager {
     public function getNoteItem($noteId,$labelId) {
         return $this->_getNoteItem($noteId,$labelId);
     }
+    //Project
+    public function getProjectList($noteId) {
+        return $this->_getProjectList($noteId);
+    }
 
+    public function getProjectItem($noteId,$labelId) {
+        return $this->_getProjectItem($noteId,$labelId);
+    }
+
+    public function labelProjectDelete($noteId,$labelId) {
+        return $this->_labelProjectDelete($noteId,$labelId);
+    }
+
+    public function labelProjectCreate($noteId,$labelId) {
+        return $this->_labelProjectCreate($noteId,$labelId);
+    }
+    //Todo
+    public function getTodoList($noteId) {
+        return $this->_getTodoList($noteId);
+    }
+
+    public function getTodoItem($noteId,$labelId) {
+        return $this->_getTodoItem($noteId,$labelId);
+    }
+
+    public function labelTodoDelete($noteId,$labelId) {
+        return $this->_labelTodoDelete($noteId,$labelId);
+    }
+
+    public function labelTodoCreate($noteId,$labelId) {
+        return $this->_labelTodoCreate($noteId,$labelId);
+    }
 }
