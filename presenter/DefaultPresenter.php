@@ -17,7 +17,7 @@ class DefaultPresenter extends LabaleBasePresenter {
     public function startup() {
         parent::startup();
     }
-
+    
     public function renderDefault($urlId) {
         switch ($this->httpRequest->getMethod()) {
             case 'GET':

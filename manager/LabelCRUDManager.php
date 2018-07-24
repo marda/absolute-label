@@ -12,6 +12,7 @@ class LabelCRUDManager extends BaseCRUDManager {
     }
 
     // OTHER METHODS
+    
     // CONNECT METHODS
 
     public function connectProject($id, $projectId) {

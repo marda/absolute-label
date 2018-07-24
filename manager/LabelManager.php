@@ -9,9 +9,10 @@ class LabelManager extends BaseManager {
 
     public function __construct(Context $database) {
         parent::__construct($database);
-    } 
+    }  
 
     /* INTERNAL/EXTERNAL INTERFACE */
+    
 
     private function _getById($id) {
         $ret = $this->database->fetch("SELECT * FROM label WHERE id = ?", intval($id));
