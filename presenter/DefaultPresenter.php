@@ -18,56 +18,25 @@ class DefaultPresenter extends LabaleBasePresenter {
         parent::startup();
     }
 
-    public function renderDefault() {
-        $user_id = 5; //$this->user->id;
-
+    public function renderDefault($urlId) {
         switch ($this->httpRequest->getMethod()) {
             case 'GET':
-                $urlId = $this->getParameter('urlId');
-                if ($this->getParameter('urlId') != null) {
+                if ($$urlId != null) {
                     $this->_getRequest($urlId);
                 } else {
                     $this->_getListRequest($this->getParameter('offset'), $this->getParameter('limit'));
                 }
                 break;
             case 'POST':
-                $name = json_decode($this->httpRequest->getRawBody(), true)["name"];
-                $ret = $this->labelCRUDManager->create($user_id, $name);
-                if ($ret == null) {
-                    $this->jsonResponse->payload = [];
-                    $this->httpResponse->setCode(Response::S500_INTERNAL_SERVER_ERROR);
-                } else {
-                    $this->jsonResponse->payload = [];
-                    $this->httpResponse->setCode(Response::S201_CREATED);
-                }
-
+                $this->_postRequest($urlId);
                 break;
             case 'PUT':
-                $post = json_decode($this->httpRequest->getRawBody(), true);
-                $id = isset($post['id']) ? $post['id'] : $this->getParameter('urlId');
-                if ($id == null) {
-                    $this->jsonResponse->payload = [];
-                    $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
-                } else if ($this->labelManager->canUserEdit($user_id, $id)) {
-                    unset($post['id']);
-                    unset($post['user_id']);
-                    $this->jsonResponse->payload = [];
-                    $this->labelCRUDManager->update($id, $post);
-                } else {
-                    $this->jsonResponse->payload = [];
-                    $this->httpResponse->setCode(Response::S403_FORBIDDEN);
-                }
+                $this->_putRequest($urlId);
                 break;
             case 'DELETE':
-                
-                $post = json_decode($this->httpRequest->getRawBody(), true);
-                $id = isset($post['id']) ? $post['id'] : $this->getParameter('urlId');
-                
-                if ($this->labelManager->canUserEdit($user_id, $id)) {
-                    $this->labelCRUDManager->delete($id);
-                    $this->httpResponse->setCode(Response::S200_OK);
-                }
+                $this->_deleteRequest($urlId);
             default:
+                
                 break;
         }
         $this->sendResponse(new JsonResponse(
@@ -86,9 +55,46 @@ class DefaultPresenter extends LabaleBasePresenter {
     }
 
     private function _getListRequest($offset, $limit) {
-        $users = $this->labelManager->getList($this->user->id, $offset, $limit);
+        $labels = $this->labelManager->getList($this->user->id, $offset, $limit);
         $this->httpResponse->setCode(Response::S200_OK);
-        $this->jsonResponse->payload = $users;
+        $this->jsonResponse->payload = $labels;
+    }
+
+    private function _putRequest($id) {
+        $post = json_decode($this->httpRequest->getRawBody(), true);
+        if ($id == null) {
+            $this->jsonResponse->payload = [];
+            $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
+        } else if ($this->labelManager->canUserEdit($this->user->id, $id)) {
+            unset($post['id']);
+            unset($post['user_id']);
+            $this->jsonResponse->payload = [];
+            $this->labelCRUDManager->update($id, $post);
+        } else {
+            $this->jsonResponse->payload = [];
+            $this->httpResponse->setCode(Response::S403_FORBIDDEN);
+        }
+    }
+
+    private function _postRequest($urlId) {
+        $name = json_decode($this->httpRequest->getRawBody(), true)["name"];
+        $ret = $this->labelCRUDManager->create($this->user->id, $name);
+        if (!$ret) {
+            $this->jsonResponse->payload = [];
+            $this->httpResponse->setCode(Response::S500_INTERNAL_SERVER_ERROR);
+        } else {
+            $this->jsonResponse->payload = [];
+            $this->httpResponse->setCode(Response::S201_CREATED);
+        }
+    }
+
+    private function _deleteRequest($id) {
+        $post = json_decode($this->httpRequest->getRawBody(), true);
+
+        if ($this->labelManager->canUserEdit($this->user->id, $id)) {
+            $this->labelCRUDManager->delete($id);
+            $this->httpResponse->setCode(Response::S200_OK);
+        }
     }
 
 }

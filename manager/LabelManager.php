@@ -19,8 +19,8 @@ class LabelManager extends BaseManager {
     }
 
     private function _getList($user_id,$offset, $limit) {
-        $offset = ($offset == null ? 5 : intval ($offset));
-        $limit = ($limit == null ? 5 : intval ($limit));
+        $offset = ($offset == null ? 0 : intval ($offset));
+        $limit = ($limit == null ? 50 : intval ($limit));
         $ret = $this->database->fetchAll("SELECT * FROM label LIMIT ?,?", $offset, $limit);
         return $ret;
     }
@@ -30,11 +30,29 @@ class LabelManager extends BaseManager {
         return $ret;
     }
 
+    private function _getNoteList($noteId) {
+        $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `note_label` ON `label`.`id` = `note_label`.`label_id` WHERE (`note_label`.`note_id` = ?)',$noteId);
+        return $ret;
+    }
+
+    private function _getNoteItem($noteId,$labelId) {
+        $ret = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `note_label` ON `label`.`id` = `note_label`.`label_id` WHERE (`note_label`.`note_id` = ?) AND (`label`.`id` = ?)',$noteId,$labelId);
+        return $ret;
+    }
+
     private function _getUserList($userId) {
         $ret = $this->database->table('label')->where('user_id', $userId)->where('id NOT IN (SELECT label_id FROM project_label)')->fetchAll();
         return $ret;
     }
-/*
+
+    public function labelNoteDelete($noteId,$labelId) {
+        return $this->database->table('note_label')->where('label_id', $labelId)->where('note_id', $noteId)->delete();
+    }
+
+    public function labelNoteCreate($noteId,$labelId) {
+        return $this->database->table('note_label')->insert(['label_id'=>$labelId,'note_id'=>$noteId]);
+    }
+
     private function _getUserProjectList($userId) {
         $projects = $this->database->table('project_user')->where('user_id', $userId)->fetchPairs('project_id', 'role');
         $ret = [];
@@ -70,7 +88,7 @@ class LabelManager extends BaseManager {
             $ret[] = $object;
         }
         return $ret;
-    }*/
+    }
 
     private function _canUserEdit($id, $userId) {
         $db = $this->database->table('label')->get($id);
@@ -98,12 +116,16 @@ class LabelManager extends BaseManager {
     public function getProjectList($projectId) {
         return $this->_getProjectList($projectId);
     }
-
+    
+    public function getNoteList($noteId){
+        return $this->_getNoteList($noteId);
+    }
+    
     public function getUserList($userId) {
         return $this->_getUserList($userId);
     }
 
-    /*public function getUserProjectList($userId) {
+    public function getUserProjectList($userId) {
         return $this->_getUserProjectList($userId);
     }
 
@@ -113,10 +135,14 @@ class LabelManager extends BaseManager {
 
     public function getUserProjectNoteList($userId) {
         return $this->_getUserProjectNoteList($userId);
-    }*/
+    }
 
     public function canUserEdit($id, $userId) {
         return $this->_canUserEdit($id, $userId);
+    }
+
+    public function getNoteItem($noteId,$labelId) {
+        return $this->_getNoteItem($noteId,$labelId);
     }
 
 }
