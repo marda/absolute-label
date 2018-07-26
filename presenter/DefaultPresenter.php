@@ -53,32 +53,36 @@ class DefaultPresenter extends LabaleBasePresenter
 
     private function _getRequest($id)
     {
-        $label = $this->labelManager->getById($id);
-        if (!$label)
+        if ($this->labelManager->canUserEdit($this->user->id, $id))
         {
-            $this->httpResponse->setCode(Response::S404_NOT_FOUND);
-            return;
+            $label = $this->labelManager->getById($id);
+            if (!$label)
+            {
+                $this->httpResponse->setCode(Response::S404_NOT_FOUND);
+                return;
+            }
+            $this->jsonResponse->payload = $label->toJson();
+            $this->httpResponse->setCode(Response::S200_OK);
         }
-        $this->jsonResponse->payload = $label;
-        $this->httpResponse->setCode(Response::S200_OK);
+        else
+            $this->httpResponse->setCode(Response::S403_FORBIDDEN);
     }
 
     private function _getListRequest($offset, $limit)
     {
         $labels = $this->labelManager->getList($this->user->id, $offset, $limit);
         $this->httpResponse->setCode(Response::S200_OK);
-        $this->jsonResponse->payload = $labels;
+
+        $this->jsonResponse->payload = array_map(function($n)
+        {
+            return $n->toJson();
+        }, $labels);
     }
 
     private function _putRequest($id)
     {
         $post = json_decode($this->httpRequest->getRawBody(), true);
-        if ($id == null)
-        {
-            $this->jsonResponse->payload = [];
-            $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
-        }
-        else if ($this->labelManager->canUserEdit($this->user->id, $id))
+        if ($this->labelManager->canUserEdit($this->user->id, $id))
         {
             unset($post['id']);
             unset($post['user_id']);
@@ -94,8 +98,8 @@ class DefaultPresenter extends LabaleBasePresenter
 
     private function _postRequest($urlId)
     {
-        $name = json_decode($this->httpRequest->getRawBody(), true)["name"];
-        $ret = $this->labelCRUDManager->create($this->user->id, $name);
+        $post = json_decode($this->httpRequest->getRawBody(), true);
+        $ret = $this->labelCRUDManager->create($this->user->id, $post);
         if (!$ret)
         {
             $this->jsonResponse->payload = [];
@@ -110,8 +114,6 @@ class DefaultPresenter extends LabaleBasePresenter
 
     private function _deleteRequest($id)
     {
-        $post = json_decode($this->httpRequest->getRawBody(), true);
-
         if ($this->labelManager->canUserEdit($this->user->id, $id))
         {
             $this->labelCRUDManager->delete($id);

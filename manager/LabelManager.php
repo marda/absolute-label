@@ -4,6 +4,7 @@ namespace Absolute\Module\Label\Manager;
 
 use Nette\Database\Context;
 use Absolute\Core\Manager\BaseManager;
+use Absolute\Module\Label\Entity\Label;
 
 class LabelManager extends BaseManager
 {
@@ -13,33 +14,57 @@ class LabelManager extends BaseManager
         parent::__construct($database);
     }
 
+    protected function _getLabel($db)
+    {
+        if ($db == false)
+        {
+            return false;
+        }
+        $object = new Label($db->id, $db->user_id, $db->name, $db->color, $db->created);
+        return $object;
+    }
+
     /* INTERNAL/EXTERNAL INTERFACE */
 
     private function _getById($id)
     {
-        $ret = $this->database->fetch("SELECT * FROM label WHERE id = ?", intval($id));
+        $db = $this->database->fetch("SELECT * FROM label WHERE id = ?", intval($id));
+        $ret = $this->_getLabel($db);
         return $ret;
     }
 
-    private function _getList($user_id, $offset, $limit)
+    private function _getList($userId, $offset, $limit)
     {
         $offset = ($offset == null ? 0 : intval($offset));
         $limit = ($limit == null ? 50 : intval($limit));
-        $ret = $this->database->fetchAll("SELECT * FROM label LIMIT ?,?", $offset, $limit);
+        $ret = array();
+        $resultDb = $this->database->table('label')->limit($limit, $offset);
+        foreach ($resultDb as $db)
+        {
+            $object = $this->_getLabel($db);
+            if ($this->_canUserEdit($object->getId(), $userId))
+                $ret[] = $object;
+        }
         return $ret;
     }
 
     //Project
     private function _getProjectList($noteId)
     {
-        $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `project_label` ON `label`.`id` = `project_label`.`label_id` WHERE (`project_label`.`project_id` = ?)', $noteId);
+        $ret = [];
+        $rows = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `project_label` ON `label`.`id` = `project_label`.`label_id` WHERE (`project_label`.`project_id` = ?)', $noteId);
+        foreach ($rows as $db)
+        {
+            $ret[] = $this->_getLabel($db);
+        }
         return $ret;
     }
 
     private function _getProjectItem($noteId, $labelId)
     {
-        $ret = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `project_label` ON `label`.`id` = `project_label`.`label_id` WHERE (`project_label`.`project_id` = ?) AND (`label`.`id` = ?)', $noteId, $labelId);
-        return $ret;
+        $db = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `project_label` ON `label`.`id` = `project_label`.`label_id` WHERE (`project_label`.`project_id` = ?) AND (`label`.`id` = ?)', $noteId, $labelId);
+
+        return $this->_getLabel($db);
     }
 
     public function _labelProjectDelete($noteId, $labelId)
@@ -55,14 +80,19 @@ class LabelManager extends BaseManager
     //Todo
     private function _getTodoList($noteId)
     {
-        $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `todo_label` ON `label`.`id` = `todo_label`.`label_id` WHERE (`todo_label`.`todo_id` = ?)', $noteId);
+        $ret = [];
+        $rows = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `todo_label` ON `label`.`id` = `todo_label`.`label_id` WHERE (`todo_label`.`todo_id` = ?)', $noteId);
+        foreach ($rows as $db)
+        {
+            $ret[] = $this->_getLabel($db);
+        }
         return $ret;
     }
 
     private function _getTodoItem($noteId, $labelId)
     {
         $ret = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `todo_label` ON `label`.`id` = `todo_label`.`label_id` WHERE (`todo_label`.`todo_id` = ?) AND (`label`.`id` = ?)', $noteId, $labelId);
-        return $ret;
+        return $this->_getLabel($ret);
     }
 
     public function _labelTodoDelete($noteId, $labelId)
@@ -78,14 +108,19 @@ class LabelManager extends BaseManager
     //NOTE
     private function _getNoteList($noteId)
     {
-        $ret = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `note_label` ON `label`.`id` = `note_label`.`label_id` WHERE (`note_label`.`note_id` = ?)', $noteId);
+        $ret = [];
+        $rows = $this->database->fetchAll('SELECT `label`.* FROM `label` LEFT JOIN `note_label` ON `label`.`id` = `note_label`.`label_id` WHERE (`note_label`.`note_id` = ?)', $noteId);
+        foreach ($rows as $db)
+        {
+            $ret[] = $this->_getLabel($db);
+        }
         return $ret;
     }
 
     private function _getNoteItem($noteId, $labelId)
     {
         $ret = $this->database->fetch('SELECT `label`.* FROM `label` LEFT JOIN `note_label` ON `label`.`id` = `note_label`.`label_id` WHERE (`note_label`.`note_id` = ?) AND (`label`.`id` = ?)', $noteId, $labelId);
-        return $ret;
+        return $this->_getLabel($ret);
     }
 
     public function labelNoteDelete($noteId, $labelId)
@@ -100,7 +135,12 @@ class LabelManager extends BaseManager
 
     private function _getUserList($userId)
     {
-        $ret = $this->database->table('label')->where('user_id', $userId)->where('id NOT IN (SELECT label_id FROM project_label)')->fetchAll();
+        $ret = [];
+        $rows = $this->database->table('label')->where('user_id', $userId)->where('id NOT IN (SELECT label_id FROM project_label)')->fetchAll();
+        foreach ($rows as $db)
+        {
+            $ret[] = $this->_getLabel($db);
+        }
         return $ret;
     }
 

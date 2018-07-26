@@ -45,13 +45,19 @@ class LabelCRUDManager extends BaseCRUDManager
 
     // CUD METHODS
 
-    public function create($userId, $name)
+    public function create($userId, $array)
     {
-        return $this->database->query("INSERT INTO label SET ?", [
-                    'name' => $name,
+        if (isset($array["id"]))
+            unlink($array["id"]);
+        if (isset($array["user_id"]))
+            unlink($array["user_id"]);
+        if (isset($array["created"]))
+            unlink($array["created"]);
+
+        return $this->database->query("INSERT INTO label SET ?", array_merge([
                     'user_id' => $userId,
                     'created' => new \DateTime(),
-        ]);
+                                ], $array));
     }
 
     public function delete($id)
