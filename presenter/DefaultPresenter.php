@@ -82,7 +82,7 @@ class DefaultPresenter extends LabaleBasePresenter
     private function _putRequest($id)
     {
         $post = json_decode($this->httpRequest->getRawBody(), true);
-        if ($this->labelManager->canUserEdit($this->user->id, $id)||true)
+        if ($this->labelManager->canUserEdit($this->user->id, $id))
         {
             $this->jsonResponse->payload = [];
             $this->labelCRUDManager->update($id, $post);
