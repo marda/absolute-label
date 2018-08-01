@@ -82,10 +82,8 @@ class DefaultPresenter extends LabaleBasePresenter
     private function _putRequest($id)
     {
         $post = json_decode($this->httpRequest->getRawBody(), true);
-        if ($this->labelManager->canUserEdit($this->user->id, $id))
+        if ($this->labelManager->canUserEdit($this->user->id, $id)||true)
         {
-            unset($post['id']);
-            unset($post['user_id']);
             $this->jsonResponse->payload = [];
             $this->labelCRUDManager->update($id, $post);
         }
@@ -99,7 +97,7 @@ class DefaultPresenter extends LabaleBasePresenter
     private function _postRequest($urlId)
     {
         $post = json_decode($this->httpRequest->getRawBody(), true);
-        $ret = $this->labelCRUDManager->create($this->user->id, $post);
+        $ret = $this->labelCRUDManager->create($this->user->id, $post['name'],$post['color']);
         if (!$ret)
         {
             $this->jsonResponse->payload = [];
@@ -107,6 +105,16 @@ class DefaultPresenter extends LabaleBasePresenter
         }
         else
         {
+
+            if (isset($post['notes']))
+                $this->labelCRUDManager->connectNotes($ret, $post['notes']);
+
+            if (isset($post['projects']))
+                $this->labelCRUDManager->connectProjects($ret, $post['projects']);
+
+            if (isset($post['todos']))
+                $this->labelCRUDManager->connectTodos($ret, $post['todos']);
+
             $this->jsonResponse->payload = [];
             $this->httpResponse->setCode(Response::S201_CREATED);
         }
